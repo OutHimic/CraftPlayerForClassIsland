@@ -1,0 +1,120 @@
+<ci:SettingsPageBase x:Class="CraftPlayer.Views.SettingsPages.CraftPlayerSettingsPage"
+                     xmlns="https://github.com/avaloniaui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ci="http://classisland.tech/schemas/xaml/core">
+    <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="280,*" ColumnSpacing="12" RowSpacing="12">
+        <StackPanel Grid.ColumnSpan="2"
+                    Orientation="Horizontal"
+                    Spacing="8">
+            <ToggleSwitch IsChecked="{Binding EnableSmtc, Mode=TwoWay}" />
+            <TextBlock VerticalAlignment="Center"
+                       Text="启用 SMTC（系统媒体传输控制）" />
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Grid.Column="0"
+                Padding="8"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1">
+            <Grid RowDefinitions="*,Auto,Auto"
+                  RowSpacing="8">
+                <ListBox x:Name="PlaylistListBox"
+                         ItemsSource="{Binding Playlists}"
+                         SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBox x:Name="PlaylistNameTextBox"
+                         Grid.Row="1"
+                         IsEnabled="{Binding CanModifySelectedPlaylist}"
+                         Watermark="输入歌单名称" />
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            Spacing="6">
+                    <Button Content="新增"
+                            Click="AddPlaylistButton_OnClick" />
+                    <Button Content="重命名"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="RenamePlaylistButton_OnClick" />
+                    <Button Content="删除"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="DeletePlaylistButton_OnClick" />
+                    <Button Content="锁定歌单"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="LockPlaylistButton_OnClick" />
+                    <Button Content="解锁歌单"
+                            IsEnabled="{Binding SelectedPlaylistLocked}"
+                            Click="UnlockPlaylistButton_OnClick" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                Padding="8"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1">
+            <Grid RowDefinitions="Auto,*,Auto"
+                  RowSpacing="8">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="6">
+                    <Button Content="导入音频"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="ImportButton_OnClick" />
+                    <Button Content="删除曲目"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="DeleteTrackButton_OnClick" />
+                    <Button Content="上移"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="MoveUpButton_OnClick" />
+                    <Button Content="下移"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="MoveDownButton_OnClick" />
+                    <Button Content="一键打乱"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="ShuffleButton_OnClick" />
+                    <Button Content="导出CSV"
+                            Click="ExportCsvButton_OnClick" />
+                </StackPanel>
+                <ListBox x:Name="TrackListBox"
+                         Grid.Row="1"
+                         ItemsSource="{Binding Tracks}"
+                         SelectedItem="{Binding SelectedTrack, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="2*,2*,Auto,2*,Auto"
+                                  ColumnSpacing="8">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Title}" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Artist}" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding Duration}" />
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding FileName}" />
+                                <TextBlock Grid.Column="4"
+                                           Text="{Binding PlayStateText}"
+                                           Opacity="0.75" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock Grid.Row="2"
+                           Text="{Binding PlaylistLockHint}"
+                           Opacity="0.75" />
+                <TextBlock Grid.Row="2"
+                           Margin="0,18,0,0"
+                           Text="支持 wav / mp3 / ogg / flac"
+                           Opacity="0.75" />
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2"
+                   Grid.ColumnSpan="2"
+                   Opacity="0.75"
+                   Text="导入文件将复制到插件配置目录的 Library 下。" />
+    </Grid>
+</ci:SettingsPageBase>

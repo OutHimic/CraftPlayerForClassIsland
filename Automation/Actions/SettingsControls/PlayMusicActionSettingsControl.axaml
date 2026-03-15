@@ -1,0 +1,63 @@
+<ci:ActionSettingsControlBase x:Class="CraftPlayer.Automation.Actions.SettingsControls.PlayMusicActionSettingsControl"
+                              x:Name="Root"
+                              x:TypeArguments="actionSettings:PlayMusicActionSettings"
+                              xmlns="https://github.com/avaloniaui"
+                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                              xmlns:ci="http://classisland.tech/schemas/xaml/core"
+                              xmlns:actionSettings="clr-namespace:CraftPlayer.Automation.Actions.Settings">
+    <StackPanel Spacing="8">
+        <TextBlock Text="播放源" />
+        <ComboBox SelectedIndex="{Binding ElementName=Root, Path=SourceTypeIndex, Mode=TwoWay}">
+            <ComboBoxItem Content="未选择" />
+            <ComboBoxItem Content="指定音频文件" />
+            <ComboBoxItem Content="指定歌单" />
+        </ComboBox>
+
+        <Grid ColumnDefinitions="*,Auto"
+              IsVisible="{Binding ElementName=Root, Path=IsFileMode}">
+            <TextBox Text="{Binding ElementName=Root, Path=FilePath, Mode=TwoWay}"
+                     Watermark="输入音频文件绝对路径" />
+            <Button Grid.Column="1"
+                    Margin="8,0,0,0"
+                    Content="选择文件"
+                    Click="PickFileButton_OnClick" />
+        </Grid>
+
+        <ComboBox IsVisible="{Binding ElementName=Root, Path=IsPlaylistMode}"
+                  ItemsSource="{Binding ElementName=Root, Path=PlaylistItems}"
+                  SelectedItem="{Binding ElementName=Root, Path=SelectedPlaylistItem, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <StackPanel IsVisible="{Binding ElementName=Root, Path=HasSourceSelection}"
+                    Spacing="8">
+            <TextBlock Text="{Binding ElementName=Root, Path=PlayCountLabel}" />
+            <NumericUpDown Value="{Binding ElementName=Root, Path=PlayCountValue, Mode=TwoWay}"
+                           Minimum="1"
+                           Maximum="9999" />
+
+            <TextBlock Text="{Binding ElementName=Root, Path=PerTrackLimitLabel}" />
+            <NumericUpDown Value="{Binding ElementName=Root, Path=PerTrackLimitValue, Mode=TwoWay}"
+                           Minimum="0"
+                           Maximum="86400" />
+
+            <TextBlock Text="总限时（秒，0为不限制）" />
+            <NumericUpDown Value="{Binding ElementName=Root, Path=TotalLimitValue, Mode=TwoWay}"
+                           Minimum="0"
+                           Maximum="86400" />
+
+            <TextBlock IsVisible="{Binding ElementName=Root, Path=IsPlaylistMode}"
+                       Text="播放方式" />
+            <ComboBox IsVisible="{Binding ElementName=Root, Path=IsPlaylistMode}"
+                      SelectedIndex="{Binding ElementName=Root, Path=OrderModeIndex, Mode=TwoWay}">
+                <ComboBoxItem Content="顺序播放" />
+                <ComboBoxItem Content="随机播放" />
+                <ComboBoxItem Content="倒序播放" />
+            </ComboBox>
+        </StackPanel>
+    </StackPanel>
+</ci:ActionSettingsControlBase>
