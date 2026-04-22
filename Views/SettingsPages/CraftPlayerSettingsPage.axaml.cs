@@ -1,9 +1,13 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using ClassIsland.Core.Abstractions.Controls;
 using ClassIsland.Core.Attributes;
 using ClassIsland.Shared;
+using CraftPlayer.Models;
 using CraftPlayer.ViewModels;
 
 namespace CraftPlayer.Views.SettingsPages;
@@ -12,6 +16,7 @@ namespace CraftPlayer.Views.SettingsPages;
 public partial class CraftPlayerSettingsPage : SettingsPageBase
 {
     readonly CraftPlayerSettingsViewModel _viewModel;
+    readonly record struct TrackAnchorSnapshot(string TrackId, double RelativeY, Vector ScrollOffset);
 
     public CraftPlayerSettingsPage()
     {
@@ -34,16 +39,6 @@ public partial class CraftPlayerSettingsPage : SettingsPageBase
     async void DeletePlaylistButton_OnClick(object? sender, RoutedEventArgs e)
     {
         await _viewModel.DeleteSelectedPlaylistAsync();
-    }
-
-    async void LockPlaylistButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        await _viewModel.LockSelectedPlaylistAsync();
-    }
-
-    async void UnlockPlaylistButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        await _viewModel.UnlockSelectedPlaylistAsync();
     }
 
     async void ImportButton_OnClick(object? sender, RoutedEventArgs e)
@@ -73,14 +68,33 @@ public partial class CraftPlayerSettingsPage : SettingsPageBase
         await _viewModel.DeleteSelectedTrackAsync();
     }
 
+    async void ClearPlayedStateButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        await _viewModel.ClearPlayedStateAsync();
+    }
+
+    void CheckAllTracksButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel.CheckAllTracks();
+    }
+
+    void ClearCheckedTracksButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel.ClearTrackChecks();
+    }
+
     async void MoveUpButton_OnClick(object? sender, RoutedEventArgs e)
     {
+        var anchor = CaptureTrackAnchor();
         await _viewModel.MoveSelectedTrackAsync(-1);
+        RestoreTrackAnchor(anchor);
     }
 
     async void MoveDownButton_OnClick(object? sender, RoutedEventArgs e)
     {
+        var anchor = CaptureTrackAnchor();
         await _viewModel.MoveSelectedTrackAsync(1);
+        RestoreTrackAnchor(anchor);
     }
 
     async void ShuffleButton_OnClick(object? sender, RoutedEventArgs e)
@@ -110,5 +124,58 @@ public partial class CraftPlayerSettingsPage : SettingsPageBase
         var path = file.TryGetLocalPath();
         if (string.IsNullOrWhiteSpace(path)) return;
         await _viewModel.ExportCurrentPlaylistCsvAsync(path);
+    }
+
+    void TrackDataGrid_OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (sender is not DataGrid trackDataGrid) return;
+        trackDataGrid.MaxColumnWidth = Math.Max(120, e.NewSize.Width / 3);
+    }
+
+    TrackAnchorSnapshot? CaptureTrackAnchor()
+    {
+        var anchorTrack = _viewModel.Tracks.FirstOrDefault(x => x.IsChecked);
+        if (anchorTrack == null) return null;
+
+        var scrollViewer = TrackDataGrid.FindDescendantOfType<ScrollViewer>();
+        if (scrollViewer == null) return new TrackAnchorSnapshot(anchorTrack.Id, 0, default);
+
+        var row = FindTrackRow(anchorTrack);
+        var relativeY = row?.TranslatePoint(default, scrollViewer)?.Y ?? 0;
+        return new TrackAnchorSnapshot(anchorTrack.Id, relativeY, scrollViewer.Offset);
+    }
+
+    void RestoreTrackAnchor(TrackAnchorSnapshot? anchor)
+    {
+        if (anchor == null) return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            var anchorTrack = _viewModel.Tracks.FirstOrDefault(x => x.Id == anchor.Value.TrackId);
+            if (anchorTrack == null) return;
+
+            TrackDataGrid.ScrollIntoView(anchorTrack, null);
+            Dispatcher.UIThread.Post(() =>
+            {
+                var scrollViewer = TrackDataGrid.FindDescendantOfType<ScrollViewer>();
+                var row = FindTrackRow(anchorTrack);
+                if (scrollViewer == null || row == null) return;
+
+                var currentY = row.TranslatePoint(default, scrollViewer)?.Y;
+                if (currentY == null) return;
+
+                var delta = currentY.Value - anchor.Value.RelativeY;
+                scrollViewer.Offset = new Vector(
+                    anchor.Value.ScrollOffset.X,
+                    Math.Max(0, scrollViewer.Offset.Y + delta));
+            }, DispatcherPriority.Background);
+        }, DispatcherPriority.Background);
+    }
+
+    DataGridRow? FindTrackRow(TrackItem track)
+    {
+        return TrackDataGrid
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .FirstOrDefault(x => ReferenceEquals(x.DataContext, track));
     }
 }

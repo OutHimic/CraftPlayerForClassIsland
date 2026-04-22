@@ -8,6 +8,7 @@ namespace CraftPlayer.Services.Playback;
 public class SmtcBridgeService(SettingsStore settingsStore)
 {
     const string AppMediaId = "cn.craftine.craftplayer";
+    int _updateVersion;
 
     public void UpdateEnabled(MediaPlayer player)
     {
@@ -16,6 +17,7 @@ public class SmtcBridgeService(SettingsStore settingsStore)
         player.SystemMediaTransportControls.IsEnabled = enabled;
         if (!enabled)
         {
+            Interlocked.Increment(ref _updateVersion);
             var smtc = player.SystemMediaTransportControls;
             smtc.DisplayUpdater.ClearAll();
             smtc.DisplayUpdater.Update();
@@ -30,6 +32,7 @@ public class SmtcBridgeService(SettingsStore settingsStore)
             return;
         }
 
+        var updateVersion = Interlocked.Increment(ref _updateVersion);
         var smtc = player.SystemMediaTransportControls;
         player.CommandManager.IsEnabled = true;
         smtc.IsEnabled = true;
@@ -42,6 +45,10 @@ public class SmtcBridgeService(SettingsStore settingsStore)
             {
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(absolutePath);
                 await smtc.DisplayUpdater.CopyFromFileAsync(MediaPlaybackType.Music, file);
+                if (updateVersion != Volatile.Read(ref _updateVersion) || !settingsStore.Settings.EnableSmtc)
+                {
+                    return;
+                }
                 smtc.DisplayUpdater.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromFile(file);
             }
             catch
@@ -72,6 +79,7 @@ public class SmtcBridgeService(SettingsStore settingsStore)
 
     public void Clear(MediaPlayer player)
     {
+        Interlocked.Increment(ref _updateVersion);
         var smtc = player.SystemMediaTransportControls;
         smtc.DisplayUpdater.ClearAll();
         smtc.DisplayUpdater.Update();

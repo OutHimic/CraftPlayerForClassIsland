@@ -1,7 +1,8 @@
 <ci:SettingsPageBase x:Class="CraftPlayer.Views.SettingsPages.CraftPlayerSettingsPage"
                      xmlns="https://github.com/avaloniaui"
                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                     xmlns:ci="http://classisland.tech/schemas/xaml/core">
+                     xmlns:ci="http://classisland.tech/schemas/xaml/core"
+                     xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid">
     <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="280,*" ColumnSpacing="12" RowSpacing="12">
         <StackPanel Grid.ColumnSpan="2"
                     Orientation="Horizontal"
@@ -42,12 +43,6 @@
                     <Button Content="删除"
                             IsEnabled="{Binding CanModifySelectedPlaylist}"
                             Click="DeletePlaylistButton_OnClick" />
-                    <Button Content="锁定歌单"
-                            IsEnabled="{Binding CanModifySelectedPlaylist}"
-                            Click="LockPlaylistButton_OnClick" />
-                    <Button Content="解锁歌单"
-                            IsEnabled="{Binding SelectedPlaylistLocked}"
-                            Click="UnlockPlaylistButton_OnClick" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -59,14 +54,24 @@
                 BorderThickness="1">
             <Grid RowDefinitions="Auto,*,Auto"
                   RowSpacing="8">
-                <StackPanel Orientation="Horizontal"
-                            Spacing="6">
+                <WrapPanel Orientation="Horizontal"
+                           ItemHeight="32"
+                           ItemSpacing="6">
                     <Button Content="导入音频"
                             IsEnabled="{Binding CanModifySelectedPlaylist}"
                             Click="ImportButton_OnClick" />
                     <Button Content="删除曲目"
                             IsEnabled="{Binding CanModifySelectedPlaylist}"
                             Click="DeleteTrackButton_OnClick" />
+                    <Button Content="清除已播放状态"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="ClearPlayedStateButton_OnClick" />
+                    <Button Content="全选"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="CheckAllTracksButton_OnClick" />
+                    <Button Content="取消勾选"
+                            IsEnabled="{Binding CanModifySelectedPlaylist}"
+                            Click="ClearCheckedTracksButton_OnClick" />
                     <Button Content="上移"
                             IsEnabled="{Binding CanModifySelectedPlaylist}"
                             Click="MoveUpButton_OnClick" />
@@ -78,43 +83,101 @@
                             Click="ShuffleButton_OnClick" />
                     <Button Content="导出CSV"
                             Click="ExportCsvButton_OnClick" />
-                </StackPanel>
-                <ListBox x:Name="TrackListBox"
-                         Grid.Row="1"
-                         ItemsSource="{Binding Tracks}"
-                         SelectedItem="{Binding SelectedTrack, Mode=TwoWay}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid ColumnDefinitions="2*,2*,Auto,2*,Auto"
-                                  ColumnSpacing="8">
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding Title}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding Artist}" />
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding Duration}" />
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding FileName}" />
-                                <TextBlock Grid.Column="4"
-                                           Text="{Binding PlayStateText}"
-                                           Opacity="0.75" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <TextBlock Grid.Row="2"
-                           Text="{Binding PlaylistLockHint}"
-                           Opacity="0.75" />
-                <TextBlock Grid.Row="2"
-                           Margin="0,18,0,0"
-                           Text="支持 wav / mp3 / ogg / flac"
-                           Opacity="0.75" />
+                </WrapPanel>
+                <dg:DataGrid x:Name="TrackDataGrid"
+                             Grid.Row="1"
+                             AutoGenerateColumns="False"
+                             CanUserSortColumns="False"
+                             CanUserResizeColumns="True"
+                             CanUserReorderColumns="False"
+                             FocusAdorner="{x:Null}"
+                             GridLinesVisibility="Horizontal"
+                             HeadersVisibility="Column"
+                             ItemsSource="{Binding Tracks}"
+                             MaxColumnWidth="320"
+                             MinColumnWidth="80"
+                             SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                             SizeChanged="TrackDataGrid_OnSizeChanged">
+                    <dg:DataGrid.Styles>
+                        <Style Selector="dg|DataGridCell">
+                            <Setter Property="FocusAdorner" Value="{x:Null}" />
+                        </Style>
+                        <Style Selector="dg|DataGridRow">
+                            <Setter Property="FocusAdorner" Value="{x:Null}" />
+                        </Style>
+                    </dg:DataGrid.Styles>
+                    <dg:DataGrid.Columns>
+                        <dg:DataGridTemplateColumn Header="勾选"
+                                                   Width="52"
+                                                   MinWidth="52"
+                                                   MaxWidth="52"
+                                                   CanUserResize="False">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                        <dg:DataGridTemplateColumn Header="标题"
+                                                   Width="Auto"
+                                                   IsReadOnly="True">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding Title}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                        <dg:DataGridTemplateColumn Header="歌手"
+                                                   Width="Auto"
+                                                   IsReadOnly="True">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding Artist}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                        <dg:DataGridTemplateColumn Header="时长"
+                                                   Width="Auto"
+                                                   IsReadOnly="True">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding Duration}" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                        <dg:DataGridTemplateColumn Header="文件名"
+                                                   Width="Auto"
+                                                   IsReadOnly="True">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding FileName}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                        <dg:DataGridTemplateColumn Header="播放状态"
+                                                   Width="Auto"
+                                                   IsReadOnly="True">
+                            <dg:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Opacity="0.75"
+                                               Text="{Binding PlayStateText}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </dg:DataGridTemplateColumn.CellTemplate>
+                        </dg:DataGridTemplateColumn>
+                    </dg:DataGrid.Columns>
+                </dg:DataGrid>
             </Grid>
         </Border>
-
-        <TextBlock Grid.Row="2"
-                   Grid.ColumnSpan="2"
-                   Opacity="0.75"
-                   Text="导入文件将复制到插件配置目录的 Library 下。" />
     </Grid>
 </ci:SettingsPageBase>

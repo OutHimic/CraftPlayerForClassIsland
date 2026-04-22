@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CraftPlayer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+61236f134b4d5ea4ae9b5afbccb2ea540cb25dec")]
 [assembly: System.Reflection.AssemblyProductAttribute("CraftPlayer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CraftPlayer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -3,7 +3,7 @@ name: CraftPlayer
 description: 播放本地音频并提供自动化行动、规则与触发器。
 entranceAssembly: CraftPlayer.dll
 url: https://github.com/craftine/CraftPlayer
-version: 0.1.0
+version: 1.2.0
 apiVersion: 2.0.0.0
 author: craftine
 readme: README.md

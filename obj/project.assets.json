@@ -6094,32 +6094,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\OutHi\\.nuget\\packages\\": {},
-    "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\seewo\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "H:\\CrafPlayer\\CraftPlayer.csproj",
+      "projectUniqueName": "D:\\Code\\CraftPlayerForClassIsland\\CraftPlayer.csproj",
       "projectName": "CraftPlayer",
-      "projectPath": "H:\\CrafPlayer\\CraftPlayer.csproj",
-      "packagesPath": "C:\\Users\\OutHi\\.nuget\\packages\\",
-      "outputPath": "H:\\CrafPlayer\\obj\\",
+      "projectPath": "D:\\Code\\CraftPlayerForClassIsland\\CraftPlayer.csproj",
+      "packagesPath": "C:\\Users\\seewo\\.nuget\\packages\\",
+      "outputPath": "D:\\Code\\CraftPlayerForClassIsland\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\OutHi\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\seewo\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0-windows10.0.17763"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -6163,8 +6155,20 @@
         "warn": true,
         "downloadDependencies": [
           {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.25, 8.0.25]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.25, 8.0.25]"
+          },
+          {
             "name": "Microsoft.Windows.SDK.NET.Ref",
             "version": "[10.0.17763.57, 10.0.17763.57]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.25, 8.0.25]"
           }
         ],
         "frameworkReferences": {

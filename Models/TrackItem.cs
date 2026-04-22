@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace CraftPlayer.Models;
 
@@ -16,6 +17,7 @@ public class TrackItem : INotifyPropertyChanged
     int _sortIndex;
     bool _isPlayedInCycle;
     bool _isLastPlayed;
+    bool _isChecked;
     public int SortIndex
     {
         get => _sortIndex;
@@ -48,6 +50,18 @@ public class TrackItem : INotifyPropertyChanged
             _isLastPlayed = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(PlayStateText));
+        }
+    }
+
+    [JsonIgnore]
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set
+        {
+            if (_isChecked == value) return;
+            _isChecked = value;
+            OnPropertyChanged();
         }
     }
 

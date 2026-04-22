@@ -22,7 +22,6 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
 
     Playlist? _selectedPlaylist;
     TrackItem? _selectedTrack;
-    bool _selectedPlaylistLocked;
 
     public CraftPlayerSettingsViewModel(
         SettingsStore settingsStore,
@@ -61,7 +60,6 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
             _selectedPlaylist = value;
             OnPropertyChanged();
             RefreshTracks();
-            RefreshPlaylistLockState();
         }
     }
 
@@ -76,20 +74,7 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool SelectedPlaylistLocked
-    {
-        get => _selectedPlaylistLocked;
-        private set
-        {
-            if (_selectedPlaylistLocked == value) return;
-            _selectedPlaylistLocked = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CanModifySelectedPlaylist));
-        }
-    }
-
-    public bool CanModifySelectedPlaylist => SelectedPlaylist != null && !SelectedPlaylistLocked;
-    public string PlaylistLockHint => SelectedPlaylistLocked ? "该歌单已锁定，暂不可编辑或打乱。" : "";
+    public bool CanModifySelectedPlaylist => SelectedPlaylist != null;
 
     public async Task AddPlaylistAsync(string? name)
     {
@@ -106,7 +91,7 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
 
     public async Task RenameSelectedPlaylistAsync(string? name)
     {
-        if (SelectedPlaylist == null || SelectedPlaylistLocked) return;
+        if (SelectedPlaylist == null) return;
         if (string.IsNullOrWhiteSpace(name)) return;
         SelectedPlaylist.Name = name.Trim();
         RefreshPlaylists();
@@ -115,7 +100,7 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
 
     public async Task DeleteSelectedPlaylistAsync()
     {
-        if (SelectedPlaylist == null || SelectedPlaylistLocked) return;
+        if (SelectedPlaylist == null) return;
         foreach (var track in SelectedPlaylist.Tracks)
         {
             _libraryFileService.DeleteTrackFileIfExists(track);
@@ -127,7 +112,7 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
 
     public async Task ImportFilesAsync(IEnumerable<string> paths)
     {
-        if (SelectedPlaylist == null || SelectedPlaylistLocked) return;
+        if (SelectedPlaylist == null) return;
 
         foreach (var path in paths)
         {
@@ -145,69 +130,140 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
 
     public async Task DeleteSelectedTrackAsync()
     {
-        if (SelectedPlaylist == null || SelectedTrack == null || SelectedPlaylistLocked) return;
-        SelectedPlaylist.Tracks.RemoveAll(x => x.Id == SelectedTrack.Id);
-        _libraryFileService.DeleteTrackFileIfExists(SelectedTrack);
+        if (SelectedPlaylist == null) return;
+        var targetTracks = GetCheckedTracks();
+        if (targetTracks.Count == 0) return;
+
+        var selectedTrackId = SelectedTrack?.Id;
+        foreach (var track in targetTracks)
+        {
+            SelectedPlaylist.Tracks.RemoveAll(x => x.Id == track.Id);
+            _libraryFileService.DeleteTrackFileIfExists(track);
+        }
+
+        if (targetTracks.Any(x => x.Id == SelectedPlaylist.LastPlayedTrackId))
+        {
+            SelectedPlaylist.LastPlayedTrackId = "";
+        }
+
         ReindexTracks(SelectedPlaylist);
         RefreshTracks();
+        SelectedTrack = string.IsNullOrWhiteSpace(selectedTrackId)
+            ? null
+            : Tracks.FirstOrDefault(x => x.Id == selectedTrackId);
         await SaveAsync();
     }
 
     public async Task MoveSelectedTrackAsync(int offset)
     {
-        if (SelectedPlaylist == null || SelectedTrack == null || SelectedPlaylistLocked) return;
-        var list = SelectedPlaylist.Tracks.OrderBy(x => x.SortIndex).ToList();
-        var index = list.FindIndex(x => x.Id == SelectedTrack.Id);
-        if (index < 0) return;
-        var target = index + offset;
-        if (target < 0 || target >= list.Count) return;
+        if (SelectedPlaylist == null) return;
+        var targetTracks = GetCheckedTracks();
+        if (targetTracks.Count == 0) return;
 
-        (list[index], list[target]) = (list[target], list[index]);
-        SelectedPlaylist.Tracks = list;
+        var selectedTrackId = SelectedTrack?.Id;
+        var targetIds = targetTracks.Select(x => x.Id).ToHashSet();
+        var moved = false;
+        if (offset < 0)
+        {
+            for (var i = 1; i < Tracks.Count; i++)
+            {
+                if (!targetIds.Contains(Tracks[i].Id) || targetIds.Contains(Tracks[i - 1].Id)) continue;
+                Tracks.Move(i, i - 1);
+                moved = true;
+            }
+        }
+        else if (offset > 0)
+        {
+            for (var i = Tracks.Count - 2; i >= 0; i--)
+            {
+                if (!targetIds.Contains(Tracks[i].Id) || targetIds.Contains(Tracks[i + 1].Id)) continue;
+                Tracks.Move(i, i + 1);
+                moved = true;
+            }
+        }
+
+        if (!moved) return;
+
+        SelectedPlaylist.Tracks = Tracks.ToList();
         ReindexTracks(SelectedPlaylist);
         RefreshTracks();
-        SelectedTrack = Tracks.FirstOrDefault(x => x.Id == SelectedTrack.Id);
+        SelectedTrack = string.IsNullOrWhiteSpace(selectedTrackId)
+            ? null
+            : Tracks.FirstOrDefault(x => x.Id == selectedTrackId);
         await SaveAsync();
     }
 
     public async Task ShuffleTracksAsync()
     {
-        if (SelectedPlaylist == null || SelectedPlaylistLocked) return;
-        var list = SelectedPlaylist.Tracks.ToList();
-        for (var i = list.Count - 1; i > 0; i--)
+        if (SelectedPlaylist == null) return;
+        var list = Tracks.ToList();
+        var checkedTracks = GetCheckedTracks();
+        var tracksToShuffle = checkedTracks.Count > 0
+            ? checkedTracks
+            : list.Where(x => !x.IsPlayedInCycle).ToList();
+        if (tracksToShuffle.Count < 2) return;
+
+        var shuffledTracks = tracksToShuffle.ToList();
+        for (var i = shuffledTracks.Count - 1; i > 0; i--)
         {
             var j = _random.Next(i + 1);
-            (list[i], list[j]) = (list[j], list[i]);
+            (shuffledTracks[i], shuffledTracks[j]) = (shuffledTracks[j], shuffledTracks[i]);
         }
 
-        SelectedPlaylist.Tracks = list;
-        ReindexTracks(SelectedPlaylist);
-        RefreshTracks();
+        var targetIds = tracksToShuffle.Select(x => x.Id).ToHashSet();
+        var shuffledIndex = 0;
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (!targetIds.Contains(list[i].Id)) continue;
+            list[i] = shuffledTracks[shuffledIndex++];
+        }
+
+        ApplyTrackOrder(list);
         await SaveAsync();
+    }
+
+    public async Task ClearPlayedStateAsync()
+    {
+        if (SelectedPlaylist == null) return;
+        var targetTracks = GetCheckedTracks();
+        if (targetTracks.Count == 0) return;
+
+        var targetIds = targetTracks.Select(x => x.Id).ToHashSet();
+        foreach (var track in SelectedPlaylist.Tracks.Where(x => targetIds.Contains(x.Id)))
+        {
+            track.IsPlayedInCycle = false;
+            track.IsLastPlayed = false;
+        }
+
+        if (targetIds.Contains(SelectedPlaylist.LastPlayedTrackId) ||
+            !SelectedPlaylist.Tracks.Any(x => x.IsLastPlayed))
+        {
+            SelectedPlaylist.LastPlayedTrackId = "";
+        }
+
+        await SaveAsync();
+    }
+
+    public void CheckAllTracks()
+    {
+        foreach (var track in Tracks)
+        {
+            track.IsChecked = true;
+        }
+    }
+
+    public void ClearTrackChecks()
+    {
+        foreach (var track in Tracks)
+        {
+            track.IsChecked = false;
+        }
     }
 
     public async Task ExportCurrentPlaylistCsvAsync(string filePath)
     {
         if (SelectedPlaylist == null) return;
         await _csvExportService.ExportAsync(SelectedPlaylist, filePath);
-    }
-
-    public async Task LockSelectedPlaylistAsync()
-    {
-        if (SelectedPlaylist == null) return;
-        if (SelectedPlaylist.IsLocked) return;
-        SelectedPlaylist.IsLocked = true;
-        RefreshPlaylistLockState();
-        await SaveAsync();
-    }
-
-    public async Task UnlockSelectedPlaylistAsync()
-    {
-        if (SelectedPlaylist == null) return;
-        if (!SelectedPlaylist.IsLocked) return;
-        SelectedPlaylist.IsLocked = false;
-        RefreshPlaylistLockState();
-        await SaveAsync();
     }
 
     async Task SaveAsync()
@@ -225,7 +281,6 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
         }
 
         SelectedPlaylist = Playlists.FirstOrDefault();
-        RefreshPlaylistLockState();
     }
 
     void RefreshPlaylists()
@@ -238,17 +293,35 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
         }
 
         SelectedPlaylist = Playlists.FirstOrDefault(x => x.Id == selectedId) ?? Playlists.FirstOrDefault();
-        RefreshPlaylistLockState();
     }
 
     void RefreshTracks()
     {
         Tracks.Clear();
         if (SelectedPlaylist == null) return;
-        foreach (var track in SelectedPlaylist.Tracks)
+        foreach (var track in SelectedPlaylist.Tracks.OrderBy(x => x.SortIndex))
         {
             Tracks.Add(track);
         }
+    }
+
+    List<TrackItem> GetCheckedTracks() =>
+        Tracks.Where(x => x.IsChecked).ToList();
+
+    void ApplyTrackOrder(IReadOnlyList<TrackItem> orderedTracks)
+    {
+        for (var targetIndex = 0; targetIndex < orderedTracks.Count; targetIndex++)
+        {
+            var currentIndex = Tracks.IndexOf(orderedTracks[targetIndex]);
+            if (currentIndex >= 0 && currentIndex != targetIndex)
+            {
+                Tracks.Move(currentIndex, targetIndex);
+            }
+        }
+
+        if (SelectedPlaylist == null) return;
+        SelectedPlaylist.Tracks = Tracks.ToList();
+        ReindexTracks(SelectedPlaylist);
     }
 
     static void ReindexTracks(Playlist playlist)
@@ -257,19 +330,6 @@ public class CraftPlayerSettingsViewModel : INotifyPropertyChanged
         {
             playlist.Tracks[i].SortIndex = i;
         }
-    }
-
-    void RefreshPlaylistLockState()
-    {
-        if (SelectedPlaylist == null)
-        {
-            SelectedPlaylistLocked = false;
-            OnPropertyChanged(nameof(PlaylistLockHint));
-            return;
-        }
-
-        SelectedPlaylistLocked = SelectedPlaylist.IsLocked;
-        OnPropertyChanged(nameof(PlaylistLockHint));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -17,7 +17,7 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = CraftPlayer
-build_property.ProjectDir = H:\CrafPlayer\
+build_property.ProjectDir = D:\Code\CraftPlayerForClassIsland\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTAotOptimizerEnabled = true
@@ -31,8 +31,8 @@ build_property.CsWinRTUseWindowsUIXamlProjections = false
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[H:/CrafPlayer/Automation/Actions/SettingsControls/PlayMusicActionSettingsControl.axaml]
+[D:/Code/CraftPlayerForClassIsland/Automation/Actions/SettingsControls/PlayMusicActionSettingsControl.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[H:/CrafPlayer/Views/SettingsPages/CraftPlayerSettingsPage.axaml]
+[D:/Code/CraftPlayerForClassIsland/Views/SettingsPages/CraftPlayerSettingsPage.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

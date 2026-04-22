@@ -1,0 +1,52 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+publish/
+cipx/
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+*.nuspec
+
+# Test and coverage
+TestResults/
+BenchmarkDotNet.Artifacts/
+coverage/
+coverage-*/
+*.coverage
+*.coveragexml
+coverage*.xml
+
+# IDE and editor
+.vs/
+.idea/
+.vscode/
+*.code-workspace
+
+# Rider / ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs and temp files
+*.tmp
+*.temp
+*.log
+*.cache
+*.pid
+
+# Generated diagnostics
+*.sarif
+
+# OS files
+Thumbs.db
+Desktop.ini

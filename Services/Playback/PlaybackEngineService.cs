@@ -106,11 +106,6 @@ public class PlaybackEngineService(
             if (playlist != null)
             {
                 _currentPlaylist = playlist;
-                if (!playlist.IsLocked)
-                {
-                    playlist.IsLocked = true;
-                    _ = settingsStore.SaveAsync();
-                }
                 foreach (var track in BuildPlaylistCandidates(playlist))
                 {
                     var absolutePath = libraryFileService.GetAbsolutePath(track);
@@ -337,13 +332,14 @@ public class PlaybackEngineService(
     void PlaybackSessionOnPlaybackStateChanged(MediaPlaybackSession sender, object args)
     {
         if (!settingsStore.Settings.EnableSmtc) return;
-        var status = sender.PlaybackState switch
+        MediaPlaybackStatus? status = sender.PlaybackState switch
         {
             MediaPlaybackState.Playing => MediaPlaybackStatus.Playing,
             MediaPlaybackState.Paused => MediaPlaybackStatus.Paused,
-            _ => MediaPlaybackStatus.Changing
+            _ => null
         };
-        smtcBridgeService.UpdatePlaybackStatus(_mediaPlayer, status);
+        if (status == null) return;
+        smtcBridgeService.UpdatePlaybackStatus(_mediaPlayer, status.Value);
     }
 
     async Task StopInternalAsync(bool raiseSessionEnded)
